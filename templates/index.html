@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard - Network Anomaly Detection</title>
+    <!-- Modern Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo-icon">🛡️</div>
+                <h1>CyberGuard</h1>
+            </div>
+            
+            <div class="sidebar-content">
+                <div class="status-indicator" id="sidebar-status-box">
+                    <span class="pulse offline" id="status-pulse"></span>
+                    <span id="sidebar-status-text">Pipeline Offline</span>
+                </div>
+                
+                <hr class="divider">
+                
+                <div class="control-group" style="display: none;">
+                    <label>Run Mode</label>
+                    <select id="run-mode-select">
+                        <option value="Playback Simulator">Playback Simulator</option>
+                        <option value="Live Sniffing" selected>Live Sniffing</option>
+                    </select>
+                </div>
+                
+                <div class="control-group" id="iface-group">
+                    <label>Network Interface</label>
+                    <select id="iface-select">
+                        <option value="Auto (default)">Auto (default)</option>
+                    </select>
+                </div>
+                
+                <button id="btn-start" class="btn btn-primary">🟢 Start Detection Pipeline</button>
+                <button id="btn-stop" class="btn btn-danger" style="display: none;">🔴 Stop Detection Pipeline</button>
+                
+                <div class="pipeline-controls" id="pipeline-controls" style="display: none;">
+                    <hr class="divider">
+                    <div class="control-group">
+                        <label>Live Traffic Profile</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="traffic-mode" value="Normal" checked>
+                                <span>Normal Baseline</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="traffic-mode" value="PortScan">
+                                <span>PortScan Attack</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="traffic-mode" value="DDoS">
+                                <span>DDoS Flood</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <hr class="divider">
+                <div class="model-info">
+                    <h3>🧠 Model Info</h3>
+                    <p>Type: <strong>Isolation Forest</strong></p>
+                    <p>Status: <span class="text-success">Trained & Saved</span></p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="main-header">
+                <h2>Real-Time Threat Dashboard</h2>
+            </header>
+            
+            <!-- Top Metrics -->
+            <div class="metrics-grid">
+                <div class="metric-card" id="card-threat">
+                    <div class="metric-label">SYSTEM THREAT LEVEL</div>
+                    <div class="metric-value" id="val-threat-level">SAFE (0%)</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">CURRENT DATA RATE</div>
+                    <div class="metric-value" id="val-data-rate">0 B/s</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-label">FLOW PACKET RATE</div>
+                    <div class="metric-value" id="val-packet-rate">0 pkts/sec</div>
+                </div>
+                <div class="metric-card" id="card-anomaly">
+                    <div class="metric-label">FLOW ANOMALY RATIO</div>
+                    <div class="metric-value" id="val-anomaly-ratio">0%</div>
+                </div>
+            </div>
+
+            <!-- Charts & Logs -->
+            <div class="content-grid">
+                <!-- Chart Area -->
+                <div class="panel chart-panel">
+                    <h3>📈 Live Traffic & Anomaly Score Trend</h3>
+                    <div class="chart-container">
+                        <canvas id="mainChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Logs Area -->
+                <div class="panel log-panel">
+                    <div class="panel-header">
+                        <h3>🚨 Recent Anomalies (Logs)</h3>
+                    </div>
+                    <div class="log-container" id="log-container">
+                        <div class="empty-logs">No anomalies detected yet...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+    
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
