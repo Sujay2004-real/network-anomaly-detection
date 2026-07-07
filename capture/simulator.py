@@ -405,8 +405,7 @@ class TrafficSimulator:
             for i in range(len(predictions)):
                 row = df_batch.iloc[i]
                 ip = str(row.get('dst_ip', ''))
-                port = int(row.get('Destination Port', 0))
-                if (ip == '224.0.0.251' and port == 5353) or (ip == '224.0.0.252' and port == 5355) or (ip == '239.255.255.250' and port == 1900):
+                if ip.startswith('224.') or ip.startswith('239.') or ip == '255.255.255.255':
                     predictions[i] = 1 # Revert to normal
                         
             # 3. Calculate statistics for this interval
@@ -472,13 +471,14 @@ class TrafficSimulator:
             total_packets_sniffed += batch_packet_count
             total_anomalies_detected += anomalies_in_batch
             
-            # ── Threat score calculation ──
             # Base threat from anomaly ratio (0-100)
             base_threat = anomaly_ratio * 100
             
             # Rate booster: more responsive to moderate traffic volumes.
-            # 500 pkts/sec already contributes noticeably; caps at 30 points.
-            rate_booster = min(30, (packet_rate / 500) * 15)
+            # Only apply if there are actual anomalies for the current profile!
+            rate_booster = 0
+            if (anomalies_in_batch > 0) or (is_flood and self.active_mode != "PortScan"):
+                rate_booster = min(30, (packet_rate / 500) * 15)
             
             threat_score = min(100, int(base_threat + rate_booster))
             
@@ -493,13 +493,20 @@ class TrafficSimulator:
                     # Only keep the top 10 alerts from this tick to avoid flooding the log with
                     # thousands of identical DDoS rows
                     new_alerts = new_alerts[:10]
-                    existing_alerts = robust_read_json(ALERTS_FILE, default=[])
+                    alerts = robust_read_json(ALERTS_FILE, default=[])
+                    for alert in new_alerts:
+                        alerts.insert(0, alert)
+                        
+                        # Append to permanent history
+                        try:
+                            history_path = os.path.join(os.path.dirname(ALERTS_FILE), 'scan_history.jsonl')
+                            with open(history_path, 'a') as f:
+                                f.write(json.dumps(alert) + '\n')
+                        except Exception:
+                            pass
                     
                     # Keep latest 100 alerts
-                    updated_alerts = new_alerts + existing_alerts
-                    updated_alerts = updated_alerts[:100]
-                    
-                    robust_write_json(ALERTS_FILE, updated_alerts)
+                    robust_write_json(ALERTS_FILE, alerts[:100])
                 except Exception as e:
                     print(f"Error saving alerts: {e}")
                     

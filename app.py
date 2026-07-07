@@ -7,7 +7,15 @@ import subprocess
 import psutil
 from flask import Flask, jsonify, request, render_template
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 0
+
+@app.after_request
+def add_header(response):
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, post-check=0, pre-check=0, max-age=0'
+    response.headers['Pragma'] = 'no-cache'
+    response.headers['Expires'] = '-1'
+    return response
 
 # File paths
 PROJECT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -80,15 +88,10 @@ def _kill_existing_pipeline():
 
 # ── Helper: discover network interfaces for live sniffing ──
 def _get_network_interfaces():
-    """Return a list of Windows network adapter names via PowerShell."""
+    """Return a list of network adapter names using scapy."""
     try:
-        result = subprocess.run(
-            ['powershell', '-Command',
-             'Get-NetAdapter | Select-Object -ExpandProperty Name'],
-            capture_output=True, text=True, timeout=5
-        )
-        names = [ln.strip() for ln in result.stdout.strip().split('\n') if ln.strip()]
-        return names
+        from scapy.all import get_working_ifaces
+        return [iface.name for iface in get_working_ifaces()]
     except Exception:
         return []
 
@@ -228,5 +231,30 @@ def api_mode():
         return jsonify({"success": True})
     return jsonify({"success": False, "error": "Invalid mode"}), 400
 
+@app.route('/api/history_logs')
+def api_history_logs():
+    history_path = os.path.join(PROJECT_DIR, "data", "scan_history.jsonl")
+    logs = []
+    if os.path.exists(history_path):
+        try:
+            with open(history_path, 'r') as f:
+                for line in f:
+                    if line.strip():
+                        logs.append(json.loads(line))
+        except Exception as e:
+            pass
+    # Return last 1000 logs to prevent browser slowdown
+    return jsonify({"logs": logs[-1000:]})
+
+@app.route('/api/clear_history', methods=['POST'])
+def api_clear_history():
+    history_path = os.path.join(PROJECT_DIR, "data", "scan_history.jsonl")
+    if os.path.exists(history_path):
+        try:
+            os.remove(history_path)
+        except Exception:
+            pass
+    return jsonify({"success": True})
+
 if __name__ == '__main__':
-    app.run(debug=True, use_reloader=False, port=8501)
+    app.run(host='0.0.0.0', debug=True, use_reloader=False, port=8501)

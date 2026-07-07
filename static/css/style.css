@@ -354,6 +354,7 @@ select:focus {
     gap: 10px;
     font-family: var(--font-mono);
     font-size: 0.85rem;
+    max-height: 350px;
 }
 
 .empty-logs {

@@ -78,46 +78,80 @@
         <!-- Main Content -->
         <main class="main-content">
             <header class="main-header">
-                <h2>Real-Time Threat Dashboard</h2>
+                <h2>CyberGuard Threat Dashboard</h2>
+                <div class="tabs" style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="btn btn-primary" id="tab-dashboard" style="padding: 8px 16px;">📊 Live Dashboard</button>
+                    <button class="btn" id="tab-history" style="padding: 8px 16px; background: transparent; border: 1px solid var(--border-color); color: var(--text-muted);">📜 Scan History</button>
+                </div>
             </header>
             
-            <!-- Top Metrics -->
-            <div class="metrics-grid">
-                <div class="metric-card" id="card-threat">
-                    <div class="metric-label">SYSTEM THREAT LEVEL</div>
-                    <div class="metric-value" id="val-threat-level">SAFE (0%)</div>
+            <div id="view-dashboard">
+                <!-- Top Metrics -->
+                <div class="metrics-grid">
+                    <div class="metric-card" id="card-threat">
+                        <div class="metric-label">SYSTEM THREAT LEVEL</div>
+                        <div class="metric-value" id="val-threat-level">SAFE (0%)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">CURRENT DATA RATE</div>
+                        <div class="metric-value" id="val-data-rate">0 B/s</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-label">FLOW PACKET RATE</div>
+                        <div class="metric-value" id="val-packet-rate">0 pkts/sec</div>
+                    </div>
+                    <div class="metric-card" id="card-anomaly">
+                        <div class="metric-label">FLOW ANOMALY RATIO</div>
+                        <div class="metric-value" id="val-anomaly-ratio">0%</div>
+                    </div>
                 </div>
-                <div class="metric-card">
-                    <div class="metric-label">CURRENT DATA RATE</div>
-                    <div class="metric-value" id="val-data-rate">0 B/s</div>
-                </div>
-                <div class="metric-card">
-                    <div class="metric-label">FLOW PACKET RATE</div>
-                    <div class="metric-value" id="val-packet-rate">0 pkts/sec</div>
-                </div>
-                <div class="metric-card" id="card-anomaly">
-                    <div class="metric-label">FLOW ANOMALY RATIO</div>
-                    <div class="metric-value" id="val-anomaly-ratio">0%</div>
+
+                <!-- Charts & Logs -->
+                <div class="content-grid">
+                    <!-- Chart Area -->
+                    <div class="panel chart-panel">
+                        <h3>📈 Live Traffic & Anomaly Score Trend</h3>
+                        <div class="chart-container">
+                            <canvas id="mainChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Logs Area -->
+                    <div class="panel log-panel">
+                        <div class="panel-header">
+                            <h3>🚨 Recent Anomalies (Logs)</h3>
+                        </div>
+                        <div class="log-container" id="log-container">
+                            <div class="empty-logs">No anomalies detected yet...</div>
+                        </div>
+                    </div>
                 </div>
             </div>
-
-            <!-- Charts & Logs -->
-            <div class="content-grid">
-                <!-- Chart Area -->
-                <div class="panel chart-panel">
-                    <h3>📈 Live Traffic & Anomaly Score Trend</h3>
-                    <div class="chart-container">
-                        <canvas id="mainChart"></canvas>
+            
+            <div id="view-history" style="display: none;">
+                <div class="panel" style="min-height: 500px;">
+                    <div class="panel-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+                        <h3>Complete Scan History (Persistent)</h3>
+                        <div style="display: flex; gap: 10px;">
+                            <button id="btn-refresh-history" class="btn" style="padding: 5px 12px; font-size: 0.85rem; background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-color);">🔄 Refresh</button>
+                            <button id="btn-clear-history" class="btn btn-danger" style="padding: 5px 12px; font-size: 0.85rem;">🗑️ Clear All</button>
+                        </div>
                     </div>
-                </div>
-                
-                <!-- Logs Area -->
-                <div class="panel log-panel">
-                    <div class="panel-header">
-                        <h3>🚨 Recent Anomalies (Logs)</h3>
-                    </div>
-                    <div class="log-container" id="log-container">
-                        <div class="empty-logs">No anomalies detected yet...</div>
+                    <div style="overflow-x: auto; max-height: 600px; overflow-y: auto; margin-top: 15px;">
+                        <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 0.9rem;">
+                            <thead style="position: sticky; top: 0; background: var(--bg-panel);">
+                                <tr style="border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
+                                    <th style="padding: 12px 10px;">Timestamp</th>
+                                    <th style="padding: 12px 10px;">Confidence</th>
+                                    <th style="padding: 12px 10px;">Anomaly Type</th>
+                                    <th style="padding: 12px 10px;">Source IP</th>
+                                    <th style="padding: 12px 10px;">Target</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-table-body">
+                                <tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Click Refresh to load history...</td></tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

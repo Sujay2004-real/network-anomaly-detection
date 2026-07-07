@@ -24,7 +24,15 @@ const els = {
     cardThreat: document.getElementById('card-threat'),
     cardAnomaly: document.getElementById('card-anomaly'),
     
-    logContainer: document.getElementById('log-container')
+    logContainer: document.getElementById('log-container'),
+    
+    tabDashboard: document.getElementById('tab-dashboard'),
+    tabHistory: document.getElementById('tab-history'),
+    viewDashboard: document.getElementById('view-dashboard'),
+    viewHistory: document.getElementById('view-history'),
+    btnRefreshHistory: document.getElementById('btn-refresh-history'),
+    btnClearHistory: document.getElementById('btn-clear-history'),
+    historyTableBody: document.getElementById('history-table-body')
 };
 
 // Initialize Chart.js
@@ -272,6 +280,70 @@ els.btnStop.addEventListener('click', async () => {
         els.btnStop.textContent = "🔴 Stop Detection Pipeline";
         pollStatus();
     }, 1000);
+});
+
+// Tab Switching & History Logic
+els.tabDashboard.addEventListener('click', () => {
+    els.viewDashboard.style.display = 'block';
+    els.viewHistory.style.display = 'none';
+    els.tabDashboard.classList.add('btn-primary');
+    els.tabDashboard.style.background = '';
+    els.tabDashboard.style.color = '';
+    els.tabHistory.classList.remove('btn-primary');
+    els.tabHistory.style.background = 'transparent';
+    els.tabHistory.style.color = 'var(--text-muted)';
+});
+
+els.tabHistory.addEventListener('click', () => {
+    els.viewDashboard.style.display = 'none';
+    els.viewHistory.style.display = 'block';
+    els.tabHistory.classList.add('btn-primary');
+    els.tabHistory.style.background = '';
+    els.tabHistory.style.color = '';
+    els.tabDashboard.classList.remove('btn-primary');
+    els.tabDashboard.style.background = 'transparent';
+    els.tabDashboard.style.color = 'var(--text-muted)';
+    loadHistoryLogs();
+});
+
+async function loadHistoryLogs() {
+    els.historyTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">Loading logs...</td></tr>';
+    try {
+        const res = await fetch('/api/history_logs?_t=' + new Date().getTime(), { cache: "no-store" });
+        const data = await res.json();
+        if(data.logs && data.logs.length > 0) {
+            els.historyTableBody.innerHTML = '';
+            // Newest first
+            const reversed = [...data.logs].reverse();
+            reversed.forEach(log => {
+                const confNum = parseInt(log.confidence) || 0;
+                const confColor = confNum < 50 ? 'var(--color-warning)' : 'var(--color-danger)';
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = '1px solid var(--border-color)';
+                tr.innerHTML = `
+                    <td style="padding: 12px 10px; white-space: nowrap; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">${log.timestamp || ''}</td>
+                    <td style="padding: 12px 10px; color: ${confColor}; font-weight: 600;">${log.confidence || ''}</td>
+                    <td style="padding: 12px 10px; font-weight: 500;">${log.anomaly_type || ''}</td>
+                    <td style="padding: 12px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">${log.src_ip || ''}</td>
+                    <td style="padding: 12px 10px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">${log.dst_ip || ''}:${log.dst_port || ''}</td>
+                `;
+                els.historyTableBody.appendChild(tr);
+            });
+        } else {
+            els.historyTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--text-muted);">No scan history found.</td></tr>';
+        }
+    } catch(e) {
+        els.historyTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: var(--color-danger);">Failed to load history logs.</td></tr>';
+    }
+}
+
+els.btnRefreshHistory.addEventListener('click', loadHistoryLogs);
+
+els.btnClearHistory.addEventListener('click', async () => {
+    if(confirm("Are you sure you want to clear the entire scan history? This cannot be undone.")) {
+        await fetch('/api/clear_history', { method: 'POST' });
+        loadHistoryLogs();
+    }
 });
 
 // Initial Setup
