@@ -278,6 +278,9 @@ els.btnStop.addEventListener('click', async () => {
 async function init() {
     initChart();
     
+    els.btnStart.disabled = true;
+    els.btnStart.textContent = "Loading network adapters...";
+    
     // Fetch interfaces
     try {
         const res = await fetch('/api/interfaces');
@@ -293,6 +296,9 @@ async function init() {
     } catch(e) {
         console.error("Failed to fetch interfaces", e);
     }
+    
+    els.btnStart.disabled = false;
+    els.btnStart.textContent = "🟢 Start Detection Pipeline";
     
     // Start Poller
     pollStatus();

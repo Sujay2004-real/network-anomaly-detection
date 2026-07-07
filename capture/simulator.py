@@ -289,6 +289,12 @@ class TrafficSimulator:
         total_pkts = int(df_eval['Total Fwd Packets'].sum() + df_eval['Total Backward Packets'].sum())
         syn_only_flows = int(((df_eval['SYN Flag Count'] > 0) & (df_eval['ACK Flag Count'] == 0)).sum())
         one_pkt_flows = int((df_eval['Total Fwd Packets'] + df_eval['Total Backward Packets'] <= 2).sum())
+        unique_ports = int(df_eval['Destination Port'].nunique())
+        unique_dst_ips = int(df_eval.get('dst_ip', pd.Series()).nunique())
+
+        # Heuristic 0: high number of unique destination ports/IPs hit rapidly is a fast port scan or sweep
+        if total_flows >= 15 and ((unique_ports / total_flows) > 0.15 or (unique_dst_ips / total_flows) > 0.15):
+            return True, "Potential Port Scan"
 
         # Heuristic 1: lots of SYN-only (no ACK) single-packet flows
         if total_flows >= 50 and syn_only_flows / total_flows > 0.6:
@@ -434,10 +440,10 @@ class TrafficSimulator:
                     # Attempt to describe anomaly type
                     if is_flood:
                         anomaly_type = flood_label
+                    elif (row['Total Fwd Packets'] + row.get('Total Backward Packets', 0) <= 5) and row.get('Flow Duration', 0) <= 500000:
+                        anomaly_type = "Potential Port Scan"
                     elif row['Flow Packets/s'] > 2000 or row['SYN Flag Count'] > 50:
                         anomaly_type = "Potential DDoS / SYN Flood"
-                    elif row['Destination Port'] > 1024 and row['Total Fwd Packets'] <= 2:
-                        anomaly_type = "Potential Port Scan"
                     else:
                         anomaly_type = "Suspicious Connection"
                         
